@@ -1,0 +1,92 @@
+<!-- SECCIÓN: EXÁMENES -->
+<div id="seccion-examenes">
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-exam" placeholder="Buscar examen..." oninput="filtrarExamenes()" />
+    </div>
+    <select id="filtro-status-exam" onchange="filtrarExamenes()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;">
+      <option value="">Todos los estados</option>
+      <option value="abierto">Abierto</option>
+      <option value="en_curso">En curso</option>
+      <option value="cerrado">Cerrado</option>
+      <option value="cancelado">Cancelado</option>
+    </select>
+    <button class="btn btn-primary" id="btn-nuevo-exam" onclick="abrirModalExamen()">+ Nueva convocatoria</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>📅 Convocatorias de examen</h3>
+      <span id="exam-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Fecha</th>
+          <th>Lugar</th>
+          <th>Grados</th>
+          <th>Inscripciones hasta</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-examenes">
+        <tr><td colspan="7" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR EXAMEN -->
+  <div class="modal-overlay hidden" id="modal-examen">
+    <div class="modal" style="max-width:620px;">
+      <div class="modal-header">
+        <h3 id="modal-exam-titulo">Nueva convocatoria</h3>
+        <button class="modal-close" onclick="cerrarModalExamen()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-examen"></div>
+        <div class="form-group">
+          <label>Nombre de la convocatoria *</label>
+          <input type="text" id="exam-nombre" placeholder="Ej: Examen de Grados – Junio 2026" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Fecha del examen *</label>
+            <input type="date" id="exam-fecha" oninput="calcularPlazo()" />
+          </div>
+          <div class="form-group">
+            <label>Plazo de inscripción (35 días antes)</label>
+            <input type="date" id="exam-plazo" readonly />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Lugar de celebración</label>
+          <input type="text" id="exam-lugar" placeholder="Ej: Polideportivo Municipal de Madrid" />
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="exam-status">
+            <option value="abierto">Abierto</option>
+            <option value="en_curso">En curso</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grados a evaluar</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;" id="checkboxes-grados">
+            <!-- Se generan dinámicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalExamen()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-exam" onclick="guardarExamen()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,8 @@
+# Configuración para Netlify
+# Esto asegura que cuando el usuario recargue una página,
+# Netlify siempre sirva el index.html y no muestre un error 404.
+
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

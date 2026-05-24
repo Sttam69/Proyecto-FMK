@@ -1,0 +1,411 @@
+<!-- SECCIÓN: INSCRIPCIONES Y PAGOS -->
+<div id="seccion-inscripciones">
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-insc" placeholder="Buscar aspirante o examen..." oninput="filtrarInscripciones()" />
+    </div>
+    <select id="filtro-pago" onchange="filtrarInscripciones()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;">
+      <option value="">Todos los pagos</option>
+      <option value="pendiente">Pago pendiente</option>
+      <option value="confirmado">Pago confirmado</option>
+      <option value="exento">Exento</option>
+    </select>
+    <button class="btn btn-primary" onclick="abrirModalInscripcion()">+ Nueva inscripción</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>📝 Inscripciones</h3>
+      <span id="insc-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Aspirante</th>
+          <th>Examen</th>
+          <th>Grado</th>
+          <th>Vía</th>
+          <th>Cuota</th>
+          <th>Pago</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-inscripciones">
+        <tr><td colspan="8" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: NUEVA INSCRIPCIÓN -->
+  <div class="modal-overlay hidden" id="modal-inscripcion">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3>Nueva inscripción</h3>
+        <button class="modal-close" onclick="cerrarModalInscripcion()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-inscripcion"></div>
+
+        <div class="form-group">
+          <label>Aspirante *</label>
+          <select id="insc-aspirante" onchange="onAspiraanteChange()">
+            <option value="">— Seleccionar aspirante —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Examen *</label>
+          <select id="insc-examen" onchange="onExamenChange()">
+            <option value="">— Seleccionar examen —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grado al que aspira *</label>
+          <select id="insc-grado" onchange="calcularCuota()">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vía del Bloque Específico *</label>
+          <select id="insc-via">
+            <option value="">— Seleccionar —</option>
+            <option value="kumite">Vía Kumite</option>
+            <option value="campeonatos">Vía Campeonatos</option>
+            <option value="tecnica">Vía Técnica</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="insc-repetidor" onchange="calcularCuota()" />
+            Aspirante repetidor (50% de descuento)
+          </label>
+        </div>
+
+        <!-- Panel de requisitos y cuota (se actualiza automáticamente) -->
+        <div id="panel-requisitos" style="display:none;margin-top:12px;"></div>
+
+        <div id="panel-cuota" style="display:none;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+            <span>Cuota base:</span>
+            <span id="cuota-base">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:#d97706;">
+            <span>Descuento:</span>
+            <span id="cuota-descuento">— %</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #e5e7eb;padding-top:8px;">
+            <span>Total a pagar:</span>
+            <span id="cuota-total" style="color:#2563eb;">—</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalInscripcion()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-insc" onclick="guardarInscripcion()">Inscribir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAR PAGO -->
+  <div class="modal-overlay hidden" id="modal-pago">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <h3>Confirmar pago</h3>
+        <button class="modal-close" onclick="cerrarModalPago()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-pago"></div>
+        <p id="pago-info" style="margin-bottom:12px;font-size:13.5px;"></p>
+        <div class="form-group">
+          <label>Fecha de pago</label>
+          <input type="date" id="pago-fecha" />
+        </div>
+        <div class="form-group">
+          <label>Estado del pago</label>
+          <select id="pago-status">
+            <option value="confirmado">Confirmado</option>
+            <option value="exento">Exento de pago</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalPago()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-confirmar-pago" onclick="confirmarPago()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabase-client.js';
+  import {
+    LISTA_GRADOS, textoGrado, formatearFechaCorta, badgeEstado,
+    calcularDescuento, calcularImporte, validarRequisitos,
+    mostrarError, mostrarExito
+  } from '../js/utils.js';
+
+  let todasInscripciones = [];
+  let aspirantesDisp = [];
+  let examenesDisp = [];
+  let aspiranteSeleccionado = null;
+  let examenSeleccionado = null;
+  let pagandoId = null;
+
+  window.init_inscripciones = async function() {
+    await Promise.all([cargarAspirantes(), cargarExamenes(), cargarInscripciones()]);
+  };
+
+  async function cargarAspirantes() {
+    const { data } = await supabase.from('aspirants').select('id, full_name, birth_date, grade_date, current_grade, club_id, is_champion_madrid, is_champion_spain, is_champion_europe, is_champion_world').order('full_name');
+    aspirantesDisp = data ?? [];
+    const select = document.getElementById('insc-aspirante');
+    aspirantesDisp.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.full_name;
+      select.appendChild(opt);
+    });
+  }
+
+  async function cargarExamenes() {
+    const { data } = await supabase.from('exams').select('id, name, exam_date, grades_offered').in('status', ['abierto','en_curso']).order('exam_date');
+    examenesDisp = data ?? [];
+    const select = document.getElementById('insc-examen');
+    examenesDisp.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = `${e.name} – ${formatearFechaCorta(e.exam_date)}`;
+      select.appendChild(opt);
+    });
+  }
+
+  async function cargarInscripciones() {
+    const tbody = document.getElementById('tabla-inscripciones');
+    try {
+      const { data, error } = await supabase
+        .from('inscriptions')
+        .select('*, aspirants(full_name), exams(name, exam_date)')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      todasInscripciones = data ?? [];
+      renderizarInscripciones(todasInscripciones);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;">Error al cargar.</td></tr>`;
+    }
+  }
+
+  function renderizarInscripciones(lista) {
+    const tbody = document.getElementById('tabla-inscripciones');
+    const count = document.getElementById('insc-count');
+    count.textContent = `${lista.length} inscripción${lista.length !== 1 ? 'es' : ''}`;
+
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📝</div><p>No hay inscripciones.</p></div></td></tr>`;
+      return;
+    }
+
+    const esAdmin = window.currentProfile?.role === 'admin';
+
+    tbody.innerHTML = lista.map(i => `
+      <tr>
+        <td><strong>${i.aspirants?.full_name ?? '—'}</strong></td>
+        <td>${i.exams?.name ?? '—'}</td>
+        <td>${textoGrado(i.target_grade)}</td>
+        <td style="text-transform:capitalize;">${i.specific_block_path ?? '—'}</td>
+        <td>${i.final_amount != null ? `${i.final_amount.toFixed(2)} €` : '—'}</td>
+        <td>${badgeEstado(i.payment_status)}</td>
+        <td>${badgeEstado(i.inscription_status)}</td>
+        <td style="white-space:nowrap;">
+          ${esAdmin && i.payment_status === 'pendiente'
+            ? `<button class="btn btn-success btn-sm" onclick="abrirModalPago('${i.id}','${i.aspirants?.full_name}',${i.final_amount})">Confirmar pago</button>`
+            : ''}
+        </td>
+      </tr>`).join('');
+  }
+
+  window.filtrarInscripciones = function() {
+    const q    = document.getElementById('search-insc').value.toLowerCase();
+    const pago = document.getElementById('filtro-pago').value;
+    const filtrado = todasInscripciones.filter(i => {
+      const txt = (i.aspirants?.full_name + (i.exams?.name ?? '')).toLowerCase().includes(q);
+      const pg  = !pago || i.payment_status === pago;
+      return txt && pg;
+    });
+    renderizarInscripciones(filtrado);
+  };
+
+  window.onAspiraanteChange = async function() {
+    const id = document.getElementById('insc-aspirante').value;
+    aspiranteSeleccionado = aspirantesDisp.find(a => a.id === id) ?? null;
+    document.getElementById('panel-requisitos').style.display = 'none';
+    document.getElementById('panel-cuota').style.display = 'none';
+  };
+
+  window.onExamenChange = function() {
+    const id = document.getElementById('insc-examen').value;
+    examenSeleccionado = examenesDisp.find(e => e.id === id) ?? null;
+
+    const selectGrado = document.getElementById('insc-grado');
+    selectGrado.innerHTML = '<option value="">— Seleccionar —</option>';
+    if (examenSeleccionado?.grades_offered) {
+      examenSeleccionado.grades_offered.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = textoGrado(g);
+        selectGrado.appendChild(opt);
+      });
+    } else {
+      LISTA_GRADOS.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = textoGrado(g);
+        selectGrado.appendChild(opt);
+      });
+    }
+    document.getElementById('panel-requisitos').style.display = 'none';
+    document.getElementById('panel-cuota').style.display = 'none';
+  };
+
+  window.calcularCuota = async function() {
+    const grado      = document.getElementById('insc-grado').value;
+    const repetidor  = document.getElementById('insc-repetidor').checked;
+    if (!aspiranteSeleccionado || !examenSeleccionado || !grado) return;
+
+    // Cargar licencias del aspirante
+    const { data: licencias } = await supabase
+      .from('licenses')
+      .select('season')
+      .eq('aspirant_id', aspiranteSeleccionado.id);
+
+    // Validar requisitos
+    const req = validarRequisitos(aspiranteSeleccionado, grado, examenSeleccionado.exam_date, licencias ?? []);
+    const panelReq = document.getElementById('panel-requisitos');
+    panelReq.style.display = 'block';
+    panelReq.className = req.cumple ? 'alert alert-success' : 'alert alert-warning';
+    panelReq.innerHTML = `
+      <div>
+        <strong>${req.cumple ? '✓ El aspirante cumple los requisitos' : '⚠ Requisitos no completados'}</strong>
+        <ul style="margin-top:6px;padding-left:16px;">
+          ${req.detalles.map(d => `<li style="color:${d.ok ? '#15803d' : d.ok === false ? '#b91c1c' : '#92400e'}">${d.texto}</li>`).join('')}
+        </ul>
+      </div>`;
+
+    // Calcular cuota
+    const descuento = calcularDescuento(aspiranteSeleccionado, repetidor);
+    const importe   = calcularImporte(grado, descuento);
+    document.getElementById('cuota-base').textContent     = `${importe.base.toFixed(2)} €`;
+    document.getElementById('cuota-descuento').textContent = `${descuento}% (−${importe.descuento.toFixed(2)} €)`;
+    document.getElementById('cuota-total').textContent    = `${importe.final.toFixed(2)} €`;
+    document.getElementById('panel-cuota').style.display = 'block';
+  };
+
+  window.abrirModalInscripcion = function() {
+    document.getElementById('insc-aspirante').value = '';
+    document.getElementById('insc-examen').value = '';
+    document.getElementById('insc-grado').innerHTML = '<option value="">— Seleccionar —</option>';
+    document.getElementById('insc-via').value = '';
+    document.getElementById('insc-repetidor').checked = false;
+    document.getElementById('panel-requisitos').style.display = 'none';
+    document.getElementById('panel-cuota').style.display = 'none';
+    document.getElementById('msg-inscripcion').innerHTML = '';
+    aspiranteSeleccionado = null;
+    examenSeleccionado = null;
+    document.getElementById('modal-inscripcion').classList.remove('hidden');
+  };
+
+  window.cerrarModalInscripcion = function() {
+    document.getElementById('modal-inscripcion').classList.add('hidden');
+  };
+
+  window.guardarInscripcion = async function() {
+    const aspId  = document.getElementById('insc-aspirante').value;
+    const examId = document.getElementById('insc-examen').value;
+    const grado  = document.getElementById('insc-grado').value;
+    const via    = document.getElementById('insc-via').value;
+    const rep    = document.getElementById('insc-repetidor').checked;
+
+    if (!aspId || !examId || !grado || !via) {
+      mostrarError('msg-inscripcion', 'Todos los campos con * son obligatorios.');
+      return;
+    }
+
+    const descuento = calcularDescuento(aspiranteSeleccionado ?? {}, rep);
+    const importe   = calcularImporte(grado, descuento);
+
+    const btn = document.getElementById('btn-guardar-insc');
+    btn.disabled = true;
+    btn.textContent = 'Inscribiendo...';
+
+    try {
+      const { error } = await supabase.from('inscriptions').insert({
+        exam_id:             examId,
+        aspirant_id:         aspId,
+        target_grade:        grado,
+        specific_block_path: via,
+        fee_amount:          importe.base,
+        discount_percent:    descuento,
+        final_amount:        importe.final,
+        payment_status:      descuento === 100 ? 'exento' : 'pendiente',
+        requirements_ok:     false,
+        inscription_status:  'pendiente',
+        registered_by:       window.currentProfile?.id
+      });
+      if (error) throw error;
+      mostrarExito('msg-inscripcion', '✓ Inscripción registrada correctamente. Pendiente de confirmación de pago.');
+      await cargarInscripciones();
+    } catch (err) {
+      mostrarError('msg-inscripcion', `Error: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Inscribir';
+    }
+  };
+
+  window.abrirModalPago = function(id, nombre, importe) {
+    pagandoId = id;
+    document.getElementById('pago-info').textContent = `Aspirante: ${nombre} — Importe: ${(importe ?? 0).toFixed(2)} €`;
+    document.getElementById('pago-fecha').value = new Date().toISOString().split('T')[0];
+    document.getElementById('pago-status').value = 'confirmado';
+    document.getElementById('msg-pago').innerHTML = '';
+    document.getElementById('modal-pago').classList.remove('hidden');
+  };
+
+  window.cerrarModalPago = function() {
+    document.getElementById('modal-pago').classList.add('hidden');
+  };
+
+  window.confirmarPago = async function() {
+    const fecha  = document.getElementById('pago-fecha').value;
+    const status = document.getElementById('pago-status').value;
+    const btn    = document.getElementById('btn-confirmar-pago');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+      const { error } = await supabase
+        .from('inscriptions')
+        .update({
+          payment_status: status,
+          payment_date: fecha || null,
+          inscription_status: status === 'confirmado' || status === 'exento' ? 'confirmada' : 'pendiente'
+        })
+        .eq('id', pagandoId);
+      if (error) throw error;
+      mostrarExito('msg-pago', '✓ Pago registrado.');
+      await cargarInscripciones();
+      setTimeout(() => cerrarModalPago(), 1500);
+    } catch (err) {
+      mostrarError('msg-pago', `Error: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar';
+    }
+  };
+
+  if (document.getElementById('seccion-inscripciones')) window.init_inscripciones();
+</script>

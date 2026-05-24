@@ -1,0 +1,423 @@
+<!-- SECCIÓN: ASPIRANTES -->
+<div id="seccion-aspirantes">
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-asp" placeholder="Buscar por nombre, club o grado..." oninput="filtrarAspirantes()" />
+    </div>
+    <select id="filtro-club-asp" onchange="filtrarAspirantes()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;">
+      <option value="">Todos los clubes</option>
+    </select>
+    <button class="btn btn-primary" id="btn-nuevo-asp" onclick="abrirModalAspirante()">+ Nuevo aspirante</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>🥋 Aspirantes registrados</h3>
+      <span id="asp-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Club</th>
+          <th>Grado actual</th>
+          <th>Fecha del grado</th>
+          <th>Estilo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-aspirantes">
+        <tr><td colspan="6" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR ASPIRANTE -->
+  <div class="modal-overlay hidden" id="modal-aspirante">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 id="modal-asp-titulo">Nuevo aspirante</h3>
+        <button class="modal-close" onclick="cerrarModalAspirante()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-aspirante"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Nombre completo *</label>
+            <input type="text" id="asp-nombre" placeholder="Ej: María López García" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de nacimiento *</label>
+            <input type="date" id="asp-nacimiento" />
+          </div>
+          <div class="form-group">
+            <label>DNI / Pasaporte</label>
+            <input type="text" id="asp-dni" placeholder="12345678A" />
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" id="asp-email" placeholder="correo@ejemplo.com" />
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" id="asp-telefono" placeholder="600 000 000" />
+          </div>
+          <div class="form-group">
+            <label>Club *</label>
+            <select id="asp-club">
+              <option value="">— Seleccionar club —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estilo de karate</label>
+            <select id="asp-estilo">
+              <option value="">— Seleccionar —</option>
+              <option>Shotokan</option>
+              <option>Goju-ryu</option>
+              <option>Wado-ryu</option>
+              <option>Shito-ryu</option>
+              <option>Kyokushin</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Grado actual *</label>
+            <select id="asp-grado">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha de obtención del grado *</label>
+            <input type="date" id="asp-fecha-grado" />
+          </div>
+        </div>
+
+        <!-- Méritos deportivos -->
+        <div style="margin-top:8px;">
+          <label style="font-size:13px;font-weight:600;color:#1f2937;display:block;margin-bottom:8px;">Méritos deportivos (para cálculo de descuentos)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;">
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-madrid" /> Campeón de Madrid (50% descuento)
+            </label>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-españa" /> Campeón de España (50% descuento)
+            </label>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-europa" /> Campeón de Europa (100% descuento)
+            </label>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-mundo" /> Campeón del Mundo (100% descuento)
+            </label>
+          </div>
+        </div>
+
+        <!-- Licencias federativas -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <label style="font-size:13px;font-weight:600;color:#1f2937;">Licencias federativas</label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="agregarLicencia()">+ Añadir temporada</button>
+          </div>
+          <div id="lista-licencias" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+          <div id="form-nueva-licencia" style="display:none;margin-top:8px;display:flex;gap:8px;align-items:center;">
+            <input type="text" id="nueva-temporada" placeholder="Ej: 2024-2025" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;width:140px;" />
+            <button type="button" class="btn btn-primary btn-sm" onclick="confirmarLicencia()">Añadir</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalAspirante()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-asp" onclick="guardarAspirante()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VER HISTORIAL -->
+  <div class="modal-overlay hidden" id="modal-historial">
+    <div class="modal" style="max-width:700px;">
+      <div class="modal-header">
+        <h3 id="historial-titulo">Historial de exámenes</h3>
+        <button class="modal-close" onclick="cerrarHistorial()">✕</button>
+      </div>
+      <div class="modal-body" id="historial-contenido">
+        <div class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabase-client.js';
+  import { LISTA_GRADOS, textoGrado, formatearFechaCorta, badgeEstado, mostrarError, mostrarExito } from '../js/utils.js';
+
+  let todosAspirantes = [];
+  let editandoAspId = null;
+  let licenciasTemp = [];
+  let clubsDisponibles = [];
+
+  window.init_aspirantes = async function() {
+    poblarGrados();
+    await cargarClubs();
+    await cargarAspirantes();
+    // Ocultar "Nuevo aspirante" si el rol es "aspirante"
+    const rol = window.currentProfile?.role;
+    if (rol === 'aspirante') {
+      document.getElementById('btn-nuevo-asp').style.display = 'none';
+    }
+  };
+
+  function poblarGrados() {
+    const select = document.getElementById('asp-grado');
+    select.innerHTML = '<option value="">— Seleccionar —</option>';
+    LISTA_GRADOS.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g;
+      opt.textContent = textoGrado(g);
+      select.appendChild(opt);
+    });
+  }
+
+  async function cargarClubs() {
+    const { data } = await supabase.from('clubs').select('id, name').order('name');
+    clubsDisponibles = data ?? [];
+    const selectFiltro = document.getElementById('filtro-club-asp');
+    const selectModal  = document.getElementById('asp-club');
+    clubsDisponibles.forEach(c => {
+      selectFiltro.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      selectModal.appendChild(opt);
+    });
+  }
+
+  async function cargarAspirantes() {
+    const tbody = document.getElementById('tabla-aspirantes');
+    try {
+      const { data, error } = await supabase
+        .from('aspirants')
+        .select('*, clubs(name)')
+        .order('full_name');
+      if (error) throw error;
+      todosAspirantes = data ?? [];
+      renderizarAspirantes(todosAspirantes);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;">Error al cargar aspirantes.</td></tr>`;
+    }
+  }
+
+  function renderizarAspirantes(lista) {
+    const tbody = document.getElementById('tabla-aspirantes');
+    const count = document.getElementById('asp-count');
+    count.textContent = `${lista.length} aspirante${lista.length !== 1 ? 's' : ''}`;
+
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🥋</div><p>No hay aspirantes registrados.</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = lista.map(a => `
+      <tr>
+        <td><strong>${a.full_name}</strong></td>
+        <td>${a.clubs?.name ?? '—'}</td>
+        <td>${textoGrado(a.current_grade)}</td>
+        <td>${formatearFechaCorta(a.grade_date)}</td>
+        <td>${a.karate_style ?? '—'}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="editarAspirante('${a.id}')">Editar</button>
+          <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="verHistorial('${a.id}','${a.full_name}')">Historial</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  window.filtrarAspirantes = function() {
+    const q     = document.getElementById('search-asp').value.toLowerCase();
+    const club  = document.getElementById('filtro-club-asp').value;
+    const filtrado = todosAspirantes.filter(a => {
+      const coincideTexto = a.full_name.toLowerCase().includes(q)
+        || (a.current_grade ?? '').toLowerCase().includes(q)
+        || (a.clubs?.name ?? '').toLowerCase().includes(q);
+      const coincideClub = !club || a.club_id === club;
+      return coincideTexto && coincideClub;
+    });
+    renderizarAspirantes(filtrado);
+  };
+
+  window.abrirModalAspirante = function(id) {
+    editandoAspId = id ?? null;
+    licenciasTemp = [];
+    document.getElementById('modal-asp-titulo').textContent = id ? 'Editar aspirante' : 'Nuevo aspirante';
+    document.getElementById('msg-aspirante').innerHTML = '';
+
+    if (!id) {
+      ['asp-nombre','asp-dni','asp-email','asp-telefono'].forEach(f => document.getElementById(f).value = '');
+      document.getElementById('asp-nacimiento').value = '';
+      document.getElementById('asp-fecha-grado').value = '';
+      document.getElementById('asp-club').value = '';
+      document.getElementById('asp-grado').value = '';
+      document.getElementById('asp-estilo').value = '';
+      ['asp-madrid','asp-españa','asp-europa','asp-mundo'].forEach(f => { document.getElementById(f).checked = false; });
+    } else {
+      const a = todosAspirantes.find(x => x.id === id);
+      if (!a) return;
+      document.getElementById('asp-nombre').value    = a.full_name;
+      document.getElementById('asp-dni').value       = a.dni ?? '';
+      document.getElementById('asp-email').value     = a.email ?? '';
+      document.getElementById('asp-telefono').value  = a.phone ?? '';
+      document.getElementById('asp-nacimiento').value = a.birth_date;
+      document.getElementById('asp-fecha-grado').value = a.grade_date;
+      document.getElementById('asp-club').value      = a.club_id;
+      document.getElementById('asp-grado').value     = a.current_grade;
+      document.getElementById('asp-estilo').value    = a.karate_style ?? '';
+      document.getElementById('asp-madrid').checked  = a.is_champion_madrid;
+      document.getElementById('asp-españa').checked  = a.is_champion_spain;
+      document.getElementById('asp-europa').checked  = a.is_champion_europe;
+      document.getElementById('asp-mundo').checked   = a.is_champion_world;
+      cargarLicenciasAspirante(id);
+    }
+
+    renderizarLicencias();
+    document.getElementById('modal-aspirante').classList.remove('hidden');
+  };
+
+  async function cargarLicenciasAspirante(aspId) {
+    const { data } = await supabase.from('licenses').select('season').eq('aspirant_id', aspId);
+    licenciasTemp = (data ?? []).map(l => l.season);
+    renderizarLicencias();
+  }
+
+  function renderizarLicencias() {
+    const contenedor = document.getElementById('lista-licencias');
+    contenedor.innerHTML = licenciasTemp.map(s => `
+      <span style="background:#dbeafe;color:#1d4ed8;padding:4px 10px;border-radius:100px;font-size:12px;display:inline-flex;align-items:center;gap:6px;">
+        ${s}
+        <button type="button" onclick="eliminarLicencia('${s}')" style="background:none;border:none;cursor:pointer;color:#1d4ed8;font-size:14px;padding:0;line-height:1;">×</button>
+      </span>`).join('');
+  }
+
+  window.agregarLicencia = function() {
+    document.getElementById('form-nueva-licencia').style.display = 'flex';
+  };
+
+  window.confirmarLicencia = function() {
+    const val = document.getElementById('nueva-temporada').value.trim();
+    if (val && !licenciasTemp.includes(val)) {
+      licenciasTemp.push(val);
+      renderizarLicencias();
+    }
+    document.getElementById('nueva-temporada').value = '';
+    document.getElementById('form-nueva-licencia').style.display = 'none';
+  };
+
+  window.eliminarLicencia = function(season) {
+    licenciasTemp = licenciasTemp.filter(s => s !== season);
+    renderizarLicencias();
+  };
+
+  window.editarAspirante = function(id) { window.abrirModalAspirante(id); };
+
+  window.cerrarModalAspirante = function() {
+    document.getElementById('modal-aspirante').classList.add('hidden');
+  };
+
+  window.guardarAspirante = async function() {
+    const nombre     = document.getElementById('asp-nombre').value.trim();
+    const nacimiento = document.getElementById('asp-nacimiento').value;
+    const clubId     = document.getElementById('asp-club').value;
+    const grado      = document.getElementById('asp-grado').value;
+    const fechaGrado = document.getElementById('asp-fecha-grado').value;
+
+    if (!nombre || !nacimiento || !clubId || !grado || !fechaGrado) {
+      mostrarError('msg-aspirante', 'Por favor, completa todos los campos obligatorios (*).');
+      return;
+    }
+
+    const btn = document.getElementById('btn-guardar-asp');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const datos = {
+      full_name:          nombre,
+      birth_date:         nacimiento,
+      dni:                document.getElementById('asp-dni').value.trim() || null,
+      email:              document.getElementById('asp-email').value.trim() || null,
+      phone:              document.getElementById('asp-telefono').value.trim() || null,
+      club_id:            clubId,
+      karate_style:       document.getElementById('asp-estilo').value || null,
+      current_grade:      grado,
+      grade_date:         fechaGrado,
+      is_champion_madrid: document.getElementById('asp-madrid').checked,
+      is_champion_spain:  document.getElementById('asp-españa').checked,
+      is_champion_europe: document.getElementById('asp-europa').checked,
+      is_champion_world:  document.getElementById('asp-mundo').checked,
+    };
+
+    try {
+      let aspId = editandoAspId;
+      if (editandoAspId) {
+        const { error } = await supabase.from('aspirants').update(datos).eq('id', editandoAspId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from('aspirants').insert(datos).select('id').single();
+        if (error) throw error;
+        aspId = data.id;
+      }
+
+      // Sincronizar licencias
+      if (aspId && licenciasTemp.length > 0) {
+        await supabase.from('licenses').delete().eq('aspirant_id', aspId);
+        const licensesToInsert = licenciasTemp.map(s => ({ aspirant_id: aspId, season: s }));
+        await supabase.from('licenses').insert(licensesToInsert);
+      }
+
+      mostrarExito('msg-aspirante', '✓ Aspirante guardado correctamente.');
+      await cargarAspirantes();
+    } catch (err) {
+      mostrarError('msg-aspirante', `Error: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar';
+    }
+  };
+
+  window.verHistorial = async function(aspId, nombre) {
+    document.getElementById('historial-titulo').textContent = `Historial de ${nombre}`;
+    document.getElementById('historial-contenido').innerHTML = '<div class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></div>';
+    document.getElementById('modal-historial').classList.remove('hidden');
+
+    const { data } = await supabase
+      .from('inscriptions')
+      .select('target_grade, specific_block_path, inscription_status, final_amount, exams(name, exam_date), exam_results(final_result)')
+      .eq('aspirant_id', aspId)
+      .order('created_at', { ascending: false });
+
+    if (!data || data.length === 0) {
+      document.getElementById('historial-contenido').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Sin historial de exámenes.</p></div>';
+      return;
+    }
+
+    document.getElementById('historial-contenido').innerHTML = `
+      <table class="data-table">
+        <thead><tr><th>Examen</th><th>Fecha</th><th>Grado</th><th>Inscripción</th><th>Resultado</th></tr></thead>
+        <tbody>${data.map(i => `
+          <tr>
+            <td>${i.exams?.name ?? '—'}</td>
+            <td>${formatearFechaCorta(i.exams?.exam_date)}</td>
+            <td>${textoGrado(i.target_grade)}</td>
+            <td>${badgeEstado(i.inscription_status)}</td>
+            <td>${i.exam_results ? badgeEstado(i.exam_results.final_result) : '<span class="badge badge-gray">Pendiente</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  };
+
+  window.cerrarHistorial = function() {
+    document.getElementById('modal-historial').classList.add('hidden');
+  };
+
+  if (document.getElementById('seccion-aspirantes')) window.init_aspirantes();
+</script>

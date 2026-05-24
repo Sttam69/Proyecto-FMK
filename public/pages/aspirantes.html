@@ -1,0 +1,149 @@
+<!-- SECCIÓN: ASPIRANTES -->
+<div id="seccion-aspirantes">
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-asp" placeholder="Buscar por nombre, club o grado..." oninput="filtrarAspirantes()" />
+    </div>
+    <select id="filtro-club-asp" onchange="filtrarAspirantes()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;">
+      <option value="">Todos los clubes</option>
+    </select>
+    <button class="btn btn-primary" id="btn-nuevo-asp" onclick="abrirModalAspirante()">+ Nuevo aspirante</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>🥋 Aspirantes registrados</h3>
+      <span id="asp-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Club</th>
+          <th>Grado actual</th>
+          <th>Fecha del grado</th>
+          <th>Estilo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-aspirantes">
+        <tr><td colspan="6" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR ASPIRANTE -->
+  <div class="modal-overlay hidden" id="modal-aspirante">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 id="modal-asp-titulo">Nuevo aspirante</h3>
+        <button class="modal-close" onclick="cerrarModalAspirante()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-aspirante"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Nombre completo *</label>
+            <input type="text" id="asp-nombre" placeholder="Ej: María López García" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de nacimiento *</label>
+            <input type="date" id="asp-nacimiento" />
+          </div>
+          <div class="form-group">
+            <label>DNI / Pasaporte</label>
+            <input type="text" id="asp-dni" placeholder="12345678A" />
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <input type="email" id="asp-email" placeholder="correo@ejemplo.com" />
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" id="asp-telefono" placeholder="600 000 000" />
+          </div>
+          <div class="form-group">
+            <label>Club *</label>
+            <select id="asp-club">
+              <option value="">— Seleccionar club —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estilo de karate</label>
+            <select id="asp-estilo">
+              <option value="">— Seleccionar —</option>
+              <option>Shotokan</option>
+              <option>Goju-ryu</option>
+              <option>Wado-ryu</option>
+              <option>Shito-ryu</option>
+              <option>Kyokushin</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Grado actual *</label>
+            <select id="asp-grado">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fecha de obtención del grado *</label>
+            <input type="date" id="asp-fecha-grado" />
+          </div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <label style="font-size:13px;font-weight:600;color:#1f2937;display:block;margin-bottom:8px;">Méritos deportivos (para cálculo de descuentos)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;">
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-madrid" /> Campeón de Madrid (50% descuento)
+            </label>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-españa" /> Campeón de España (50% descuento)
+            </label>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-europa" /> Campeón de Europa (100% descuento)
+            </label>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="checkbox" id="asp-mundo" /> Campeón del Mundo (100% descuento)
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <label style="font-size:13px;font-weight:600;color:#1f2937;">Licencias federativas</label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="agregarLicencia()">+ Añadir temporada</button>
+          </div>
+          <div id="lista-licencias" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+          <div id="form-nueva-licencia" style="display:none;margin-top:8px;gap:8px;align-items:center;">
+            <input type="text" id="nueva-temporada" placeholder="Ej: 2024-2025" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;width:140px;" />
+            <button type="button" class="btn btn-primary btn-sm" onclick="confirmarLicencia()">Añadir</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalAspirante()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-asp" onclick="guardarAspirante()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VER HISTORIAL -->
+  <div class="modal-overlay hidden" id="modal-historial">
+    <div class="modal" style="max-width:700px;">
+      <div class="modal-header">
+        <h3 id="historial-titulo">Historial de exámenes</h3>
+        <button class="modal-close" onclick="cerrarHistorial()">✕</button>
+      </div>
+      <div class="modal-body" id="historial-contenido">
+        <div class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>

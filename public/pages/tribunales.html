@@ -1,0 +1,55 @@
+<!-- SECCIÓN: TRIBUNALES (solo Administrador) -->
+<div id="seccion-tribunales">
+
+  <div class="toolbar">
+    <select id="filtro-exam-trib" onchange="cargarTribunalesDeExamen()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;min-width:240px;">
+      <option value="">— Seleccionar examen —</option>
+    </select>
+    <button class="btn btn-primary" id="btn-nuevo-trib" onclick="abrirModalTribunal()" disabled>+ Nuevo tribunal</button>
+  </div>
+
+  <div id="contenido-tribunales">
+    <div class="empty-state">
+      <div class="empty-icon">⚖️</div>
+      <p>Selecciona un examen para ver sus tribunales.</p>
+    </div>
+  </div>
+
+  <!-- MODAL: TRIBUNAL -->
+  <div class="modal-overlay hidden" id="modal-tribunal">
+    <div class="modal" style="max-width:580px;">
+      <div class="modal-header">
+        <h3 id="modal-trib-titulo">Nuevo tribunal</h3>
+        <button class="modal-close" onclick="cerrarModalTribunal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-tribunal"></div>
+        <div class="form-group">
+          <label>Nombre del tribunal *</label>
+          <input type="text" id="trib-nombre" placeholder="Ej: Tribunal A" />
+        </div>
+
+        <div style="margin-top:8px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">Jueces asignados</label>
+          <div id="lista-jueces-trib" style="margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="select-nuevo-juez" style="flex:1;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
+              <option value="">— Añadir juez —</option>
+            </select>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="date" id="juez-diploma" placeholder="Diploma válido hasta" />
+              <span style="white-space:nowrap;color:#6b7280;">Diploma hasta</span>
+            </label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="agregarJuezTribunal()">Añadir</button>
+          </div>
+          <small style="color:#6b7280;font-size:12px;">Se recomienda número impar de jueces. Para 5º DAN o superior, se requiere 80% de votos.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalTribunal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-trib" onclick="guardarTribunal()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>

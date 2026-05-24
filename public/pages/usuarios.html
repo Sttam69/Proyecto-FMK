@@ -1,0 +1,82 @@
+<!-- SECCIÓN: GESTIÓN DE USUARIOS (solo Administrador) -->
+<div id="seccion-usuarios">
+
+  <div id="msg-usuarios-global" style="margin-bottom:16px;"></div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-usuarios" placeholder="Buscar por nombre o correo..." oninput="filtrarUsuarios()" />
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo usuario</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>👥 Usuarios del sistema</h3>
+      <span id="usuarios-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo electrónico</th>
+          <th>Rol</th>
+          <th>Club</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-usuarios">
+        <tr><td colspan="6" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR USUARIO -->
+  <div class="modal-overlay hidden" id="modal-usuario">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-usuario-titulo">Nuevo usuario</h3>
+        <button class="modal-close" onclick="cerrarModalUsuario()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-usuario"></div>
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" id="usr-nombre" placeholder="Ej: Juan García López" />
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico *</label>
+          <input type="email" id="usr-email" placeholder="correo@ejemplo.com" />
+        </div>
+        <div class="form-group" id="campo-password">
+          <label>Contraseña temporal *</label>
+          <input type="password" id="usr-password" placeholder="Mínimo 8 caracteres" />
+          <small style="color:#6b7280;font-size:12px;">El usuario deberá cambiarla en su primer inicio de sesión.</small>
+        </div>
+        <div class="form-group">
+          <label>Rol *</label>
+          <select id="usr-rol" onchange="toggleCampoClub()">
+            <option value="">— Seleccionar rol —</option>
+            <option value="admin">Administrador</option>
+            <option value="juez">Juez de Tribunal</option>
+            <option value="representante">Representante de Club</option>
+            <option value="aspirante">Aspirante</option>
+          </select>
+        </div>
+        <div class="form-group" id="campo-club" style="display:none;">
+          <label>Club *</label>
+          <select id="usr-club">
+            <option value="">— Seleccionar club —</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalUsuario()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-usuario" onclick="guardarUsuario()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>

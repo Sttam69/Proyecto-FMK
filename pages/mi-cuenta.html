@@ -1,0 +1,129 @@
+<!-- SECCIÓN: MI CUENTA -->
+<div id="seccion-mi-cuenta">
+
+  <div style="max-width:560px;">
+
+    <div class="card">
+      <div class="card-header">
+        <h3>👤 Información de mi cuenta</h3>
+      </div>
+      <div class="card-body">
+        <div id="msg-cuenta"></div>
+
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+          <div id="avatar-grande" style="width:64px;height:64px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;">?</div>
+          <div>
+            <div id="cuenta-nombre" style="font-size:18px;font-weight:700;color:#1f2937;"></div>
+            <div id="cuenta-rol"    style="font-size:13px;color:#6b7280;margin-top:2px;"></div>
+            <div id="cuenta-club"   style="font-size:13px;color:#6b7280;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nombre completo</label>
+          <input type="text" id="editar-nombre" placeholder="Tu nombre completo" />
+        </div>
+
+        <button class="btn btn-primary" onclick="guardarNombre()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header">
+        <h3>🔑 Cambiar contraseña</h3>
+      </div>
+      <div class="card-body">
+        <div id="msg-password"></div>
+        <div class="form-group">
+          <label>Nueva contraseña</label>
+          <input type="password" id="nueva-password" placeholder="Mínimo 8 caracteres" />
+        </div>
+        <div class="form-group">
+          <label>Repetir nueva contraseña</label>
+          <input type="password" id="repetir-password" placeholder="Repite la contraseña" />
+        </div>
+        <button class="btn btn-primary" onclick="cambiarPassword()">Cambiar contraseña</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header">
+        <h3>🚪 Cerrar sesión</h3>
+      </div>
+      <div class="card-body">
+        <p style="font-size:13.5px;color:#6b7280;margin-bottom:12px;">
+          Cierra tu sesión actual. Tendrás que volver a introducir tus credenciales para acceder.
+        </p>
+        <button class="btn btn-danger" onclick="if(confirm('¿Seguro que quieres cerrar sesión?')) logout()">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabase-client.js';
+  import { getCurrentProfile, logout } from '../js/auth.js';
+  import { textoRol, obtenerIniciales, mostrarError, mostrarExito } from '../js/utils.js';
+
+  window.logout = logout;
+
+  window.init_mi_cuenta = async function() {
+    const profile = window.currentProfile;
+    if (!profile) return;
+
+    document.getElementById('avatar-grande').textContent = obtenerIniciales(profile.full_name);
+    document.getElementById('cuenta-nombre').textContent = profile.full_name;
+    document.getElementById('cuenta-rol').textContent    = textoRol(profile.role);
+    document.getElementById('cuenta-club').textContent   = profile.clubs?.name ? `Club: ${profile.clubs.name}` : '';
+    document.getElementById('editar-nombre').value       = profile.full_name;
+  };
+
+  window.guardarNombre = async function() {
+    const nombre = document.getElementById('editar-nombre').value.trim();
+    if (!nombre) { mostrarError('msg-cuenta', 'El nombre no puede estar vacío.'); return; }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: nombre })
+      .eq('id', window.currentProfile.id);
+
+    if (error) {
+      mostrarError('msg-cuenta', `Error: ${error.message}`);
+    } else {
+      window.currentProfile.full_name = nombre;
+      document.getElementById('user-name').textContent = nombre;
+      document.getElementById('user-avatar').textContent = obtenerIniciales(nombre);
+      document.getElementById('cuenta-nombre').textContent = nombre;
+      document.getElementById('avatar-grande').textContent = obtenerIniciales(nombre);
+      mostrarExito('msg-cuenta', '✓ Nombre actualizado correctamente.');
+    }
+  };
+
+  window.cambiarPassword = async function() {
+    const nueva   = document.getElementById('nueva-password').value;
+    const repetir = document.getElementById('repetir-password').value;
+
+    if (!nueva || nueva.length < 8) {
+      mostrarError('msg-password', 'La contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (nueva !== repetir) {
+      mostrarError('msg-password', 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: nueva });
+    if (error) {
+      mostrarError('msg-password', `Error: ${error.message}`);
+    } else {
+      document.getElementById('nueva-password').value = '';
+      document.getElementById('repetir-password').value = '';
+      mostrarExito('msg-password', '✓ Contraseña cambiada correctamente.');
+    }
+  };
+
+  if (document.getElementById('seccion-mi-cuenta')) window.init_mi_cuenta();
+</script>

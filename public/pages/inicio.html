@@ -1,0 +1,60 @@
+<!-- SECCIÓN: PANEL DE INICIO -->
+<div id="seccion-inicio">
+
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Exámenes activos</div>
+      <div class="kpi-value" id="kpi-examenes">—</div>
+      <div class="kpi-sub">convocatorias abiertas</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Aspirantes</div>
+      <div class="kpi-value" id="kpi-aspirantes">—</div>
+      <div class="kpi-sub">registrados en el sistema</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Inscripciones pendientes</div>
+      <div class="kpi-value" id="kpi-pendientes">—</div>
+      <div class="kpi-sub">pendientes de confirmación</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Clubs registrados</div>
+      <div class="kpi-value" id="kpi-clubs">—</div>
+      <div class="kpi-sub">clubes en el sistema</div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+    <div class="card">
+      <div class="card-header">
+        <h3>📅 Próximos exámenes</h3>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('examenes')">Ver todos</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Nombre</th><th>Fecha</th><th>Estado</th></tr>
+        </thead>
+        <tbody id="tabla-proximos-examenes">
+          <tr><td colspan="3" class="loading-spinner"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>📝 Inscripciones recientes</h3>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('inscripciones')">Ver todas</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Aspirante</th><th>Grado</th><th>Estado</th></tr>
+        </thead>
+        <tbody id="tabla-inscripciones-recientes">
+          <tr><td colspan="3" class="loading-spinner"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

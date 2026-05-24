@@ -1,0 +1,153 @@
+<!-- SECCIÓN: PANEL DE INICIO -->
+<div id="seccion-inicio">
+
+  <div class="kpi-grid" id="kpi-grid">
+    <!-- Tarjetas KPI cargadas dinámicamente -->
+    <div class="kpi-card blue">
+      <div class="kpi-label">Exámenes activos</div>
+      <div class="kpi-value" id="kpi-examenes">—</div>
+      <div class="kpi-sub">convocatorias abiertas</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Aspirantes</div>
+      <div class="kpi-value" id="kpi-aspirantes">—</div>
+      <div class="kpi-sub">registrados en el sistema</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Inscripciones pendientes</div>
+      <div class="kpi-value" id="kpi-pendientes">—</div>
+      <div class="kpi-sub">pendientes de confirmación</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Clubs registrados</div>
+      <div class="kpi-value" id="kpi-clubs">—</div>
+      <div class="kpi-sub">clubes en el sistema</div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+
+    <!-- Próximos exámenes -->
+    <div class="card">
+      <div class="card-header">
+        <h3>📅 Próximos exámenes</h3>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('examenes')">Ver todos</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-proximos-examenes">
+          <tr><td colspan="3" class="loading-spinner"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Inscripciones recientes -->
+    <div class="card">
+      <div class="card-header">
+        <h3>📝 Inscripciones recientes</h3>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('inscripciones')">Ver todas</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Aspirante</th>
+            <th>Grado</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-inscripciones-recientes">
+          <tr><td colspan="3" class="loading-spinner"><div class="spinner"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabase-client.js';
+  import { formatearFechaCorta, badgeEstado, textoGrado } from '../js/utils.js';
+
+  window.init_inicio = async function() {
+    await Promise.all([
+      cargarKPIs(),
+      cargarProximosExamenes(),
+      cargarInscripcionesRecientes()
+    ]);
+  };
+
+  async function cargarKPIs() {
+    try {
+      const [examenes, aspirantes, pendientes, clubs] = await Promise.all([
+        supabase.from('exams').select('id', { count: 'exact' }).eq('status', 'abierto'),
+        supabase.from('aspirants').select('id', { count: 'exact' }),
+        supabase.from('inscriptions').select('id', { count: 'exact' }).eq('payment_status', 'pendiente'),
+        supabase.from('clubs').select('id', { count: 'exact' }),
+      ]);
+      document.getElementById('kpi-examenes').textContent  = examenes.count ?? '—';
+      document.getElementById('kpi-aspirantes').textContent = aspirantes.count ?? '—';
+      document.getElementById('kpi-pendientes').textContent = pendientes.count ?? '—';
+      document.getElementById('kpi-clubs').textContent     = clubs.count ?? '—';
+    } catch (e) { console.error(e); }
+  }
+
+  async function cargarProximosExamenes() {
+    const tbody = document.getElementById('tabla-proximos-examenes');
+    try {
+      const { data } = await supabase
+        .from('exams')
+        .select('name, exam_date, status')
+        .gte('exam_date', new Date().toISOString().split('T')[0])
+        .order('exam_date', { ascending: true })
+        .limit(5);
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#6b7280;padding:20px;">No hay exámenes próximos</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.map(e => `
+        <tr>
+          <td>${e.name}</td>
+          <td>${formatearFechaCorta(e.exam_date)}</td>
+          <td>${badgeEstado(e.status)}</td>
+        </tr>`).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#dc2626;">Error al cargar</td></tr>`;
+    }
+  }
+
+  async function cargarInscripcionesRecientes() {
+    const tbody = document.getElementById('tabla-inscripciones-recientes');
+    try {
+      const { data } = await supabase
+        .from('inscriptions')
+        .select('target_grade, inscription_status, aspirants(full_name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#6b7280;padding:20px;">No hay inscripciones</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.map(i => `
+        <tr>
+          <td>${i.aspirants?.full_name ?? '—'}</td>
+          <td>${textoGrado(i.target_grade)}</td>
+          <td>${badgeEstado(i.inscription_status)}</td>
+        </tr>`).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#dc2626;">Error al cargar</td></tr>`;
+    }
+  }
+
+  // Cargar automáticamente si ya estamos en esta sección
+  if (document.getElementById('seccion-inicio')) {
+    window.init_inicio();
+  }
+</script>

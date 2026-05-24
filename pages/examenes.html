@@ -1,0 +1,253 @@
+<!-- SECCIÓN: EXÁMENES -->
+<div id="seccion-examenes">
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-exam" placeholder="Buscar examen..." oninput="filtrarExamenes()" />
+    </div>
+    <select id="filtro-status-exam" onchange="filtrarExamenes()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;">
+      <option value="">Todos los estados</option>
+      <option value="abierto">Abierto</option>
+      <option value="en_curso">En curso</option>
+      <option value="cerrado">Cerrado</option>
+      <option value="cancelado">Cancelado</option>
+    </select>
+    <button class="btn btn-primary" id="btn-nuevo-exam" onclick="abrirModalExamen()">+ Nueva convocatoria</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>📅 Convocatorias de examen</h3>
+      <span id="exam-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Fecha</th>
+          <th>Lugar</th>
+          <th>Grados</th>
+          <th>Inscripciones hasta</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-examenes">
+        <tr><td colspan="7" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: CREAR / EDITAR EXAMEN -->
+  <div class="modal-overlay hidden" id="modal-examen">
+    <div class="modal" style="max-width:620px;">
+      <div class="modal-header">
+        <h3 id="modal-exam-titulo">Nueva convocatoria</h3>
+        <button class="modal-close" onclick="cerrarModalExamen()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-examen"></div>
+        <div class="form-group">
+          <label>Nombre de la convocatoria *</label>
+          <input type="text" id="exam-nombre" placeholder="Ej: Examen de Grados – Junio 2026" />
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group">
+            <label>Fecha del examen *</label>
+            <input type="date" id="exam-fecha" oninput="calcularPlazo()" />
+          </div>
+          <div class="form-group">
+            <label>Plazo de inscripción (35 días antes)</label>
+            <input type="date" id="exam-plazo" readonly style="background:#f4f6f9;" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Lugar de celebración</label>
+          <input type="text" id="exam-lugar" placeholder="Ej: Polideportivo Municipal de Madrid" />
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="exam-status">
+            <option value="abierto">Abierto</option>
+            <option value="en_curso">En curso</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grados a evaluar</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;" id="checkboxes-grados">
+            <!-- Se generan dinámicamente -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalExamen()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-exam" onclick="guardarExamen()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabase-client.js';
+  import { LISTA_GRADOS, textoGrado, formatearFechaCorta, badgeEstado, mostrarError, mostrarExito } from '../js/utils.js';
+
+  let todosExamenes = [];
+  let editandoExamId = null;
+
+  window.init_examenes = async function() {
+    poblarCheckboxesGrados();
+    await cargarExamenes();
+    const rol = window.currentProfile?.role;
+    if (rol !== 'admin') document.getElementById('btn-nuevo-exam').style.display = 'none';
+  };
+
+  function poblarCheckboxesGrados() {
+    const contenedor = document.getElementById('checkboxes-grados');
+    contenedor.innerHTML = LISTA_GRADOS.map(g => `
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+        <input type="checkbox" value="${g}" class="check-grado" />
+        ${textoGrado(g)}
+      </label>`).join('');
+  }
+
+  async function cargarExamenes() {
+    const tbody = document.getElementById('tabla-examenes');
+    try {
+      const { data, error } = await supabase
+        .from('exams')
+        .select('*')
+        .order('exam_date', { ascending: false });
+      if (error) throw error;
+      todosExamenes = data ?? [];
+      renderizarExamenes(todosExamenes);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#dc2626;">Error al cargar exámenes.</td></tr>`;
+    }
+  }
+
+  function renderizarExamenes(lista) {
+    const tbody = document.getElementById('tabla-examenes');
+    const count = document.getElementById('exam-count');
+    count.textContent = `${lista.length} convocatoria${lista.length !== 1 ? 's' : ''}`;
+
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📅</div><p>No hay convocatorias de examen.</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = lista.map(e => `
+      <tr>
+        <td><strong>${e.name}</strong></td>
+        <td>${formatearFechaCorta(e.exam_date)}</td>
+        <td>${e.location ?? '—'}</td>
+        <td style="font-size:12px;">${(e.grades_offered ?? []).map(g => textoGrado(g)).join(', ') || '—'}</td>
+        <td>${formatearFechaCorta(e.inscription_deadline)}</td>
+        <td>${badgeEstado(e.status)}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-secondary btn-sm" onclick="editarExamen('${e.id}')">Editar</button>
+          <button class="btn btn-primary btn-sm" style="margin-left:4px;" onclick="navigateTo('inscripciones')">Ver inscritos</button>
+        </td>
+      </tr>`).join('');
+  }
+
+  window.filtrarExamenes = function() {
+    const q      = document.getElementById('search-exam').value.toLowerCase();
+    const status = document.getElementById('filtro-status-exam').value;
+    const filtrado = todosExamenes.filter(e => {
+      const txt = (e.name + (e.location ?? '')).toLowerCase().includes(q);
+      const st  = !status || e.status === status;
+      return txt && st;
+    });
+    renderizarExamenes(filtrado);
+  };
+
+  window.calcularPlazo = function() {
+    const fecha = document.getElementById('exam-fecha').value;
+    if (!fecha) return;
+    const d = new Date(fecha);
+    d.setDate(d.getDate() - 35);
+    document.getElementById('exam-plazo').value = d.toISOString().split('T')[0];
+  };
+
+  window.abrirModalExamen = function() {
+    editandoExamId = null;
+    document.getElementById('modal-exam-titulo').textContent = 'Nueva convocatoria';
+    document.getElementById('exam-nombre').value = '';
+    document.getElementById('exam-fecha').value = '';
+    document.getElementById('exam-plazo').value = '';
+    document.getElementById('exam-lugar').value = '';
+    document.getElementById('exam-status').value = 'abierto';
+    document.querySelectorAll('.check-grado').forEach(c => c.checked = false);
+    document.getElementById('msg-examen').innerHTML = '';
+    document.getElementById('modal-examen').classList.remove('hidden');
+  };
+
+  window.editarExamen = function(id) {
+    const e = todosExamenes.find(x => x.id === id);
+    if (!e) return;
+    editandoExamId = id;
+    document.getElementById('modal-exam-titulo').textContent = 'Editar convocatoria';
+    document.getElementById('exam-nombre').value = e.name;
+    document.getElementById('exam-fecha').value  = e.exam_date;
+    document.getElementById('exam-plazo').value  = e.inscription_deadline ?? '';
+    document.getElementById('exam-lugar').value  = e.location ?? '';
+    document.getElementById('exam-status').value = e.status;
+    const grados = e.grades_offered ?? [];
+    document.querySelectorAll('.check-grado').forEach(c => {
+      c.checked = grados.includes(c.value);
+    });
+    document.getElementById('msg-examen').innerHTML = '';
+    document.getElementById('modal-examen').classList.remove('hidden');
+  };
+
+  window.cerrarModalExamen = function() {
+    document.getElementById('modal-examen').classList.add('hidden');
+  };
+
+  window.guardarExamen = async function() {
+    const nombre  = document.getElementById('exam-nombre').value.trim();
+    const fecha   = document.getElementById('exam-fecha').value;
+    const plazo   = document.getElementById('exam-plazo').value || null;
+    const lugar   = document.getElementById('exam-lugar').value.trim() || null;
+    const status  = document.getElementById('exam-status').value;
+    const grados  = [...document.querySelectorAll('.check-grado:checked')].map(c => c.value);
+
+    if (!nombre || !fecha) {
+      mostrarError('msg-examen', 'El nombre y la fecha del examen son obligatorios.');
+      return;
+    }
+
+    const btn = document.getElementById('btn-guardar-exam');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    const datos = {
+      name: nombre, exam_date: fecha, inscription_deadline: plazo,
+      location: lugar, status, grades_offered: grados,
+      created_by: window.currentProfile?.id
+    };
+
+    try {
+      if (editandoExamId) {
+        const { error } = await supabase.from('exams').update(datos).eq('id', editandoExamId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('exams').insert(datos);
+        if (error) throw error;
+      }
+      mostrarExito('msg-examen', '✓ Convocatoria guardada correctamente.');
+      await cargarExamenes();
+    } catch (err) {
+      mostrarError('msg-examen', `Error: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar';
+    }
+  };
+
+  if (document.getElementById('seccion-examenes')) window.init_examenes();
+</script>

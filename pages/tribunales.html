@@ -1,0 +1,248 @@
+<!-- SECCIÓN: TRIBUNALES (solo Administrador) -->
+<div id="seccion-tribunales">
+
+  <div class="toolbar">
+    <select id="filtro-exam-trib" onchange="cargarTribunalesDeExamen()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;min-width:240px;">
+      <option value="">— Seleccionar examen —</option>
+    </select>
+    <button class="btn btn-primary" id="btn-nuevo-trib" onclick="abrirModalTribunal()" disabled>+ Nuevo tribunal</button>
+  </div>
+
+  <div id="contenido-tribunales">
+    <div class="empty-state">
+      <div class="empty-icon">⚖️</div>
+      <p>Selecciona un examen para ver sus tribunales.</p>
+    </div>
+  </div>
+
+  <!-- MODAL: TRIBUNAL -->
+  <div class="modal-overlay hidden" id="modal-tribunal">
+    <div class="modal" style="max-width:580px;">
+      <div class="modal-header">
+        <h3 id="modal-trib-titulo">Nuevo tribunal</h3>
+        <button class="modal-close" onclick="cerrarModalTribunal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-tribunal"></div>
+        <div class="form-group">
+          <label>Nombre del tribunal *</label>
+          <input type="text" id="trib-nombre" placeholder="Ej: Tribunal A" />
+        </div>
+
+        <div style="margin-top:8px;">
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">Jueces asignados</label>
+          <div id="lista-jueces-trib" style="margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="select-nuevo-juez" style="flex:1;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;">
+              <option value="">— Añadir juez —</option>
+            </select>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+              <input type="date" id="juez-diploma" placeholder="Diploma válido hasta" />
+              <span style="white-space:nowrap;color:#6b7280;">Diploma hasta</span>
+            </label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="agregarJuezTribunal()">Añadir</button>
+          </div>
+          <small style="color:#6b7280;font-size:12px;">Se recomienda número impar de jueces. Para 5º DAN o superior, se requiere 80% de votos.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalTribunal()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-trib" onclick="guardarTribunal()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { supabase } from '../js/supabase-client.js';
+  import { mostrarError, mostrarExito } from '../js/utils.js';
+
+  let juecesDisp = [];
+  let juecesEnTribunal = [];
+  let editandoTribId = null;
+  let examSeleccionadoId = null;
+
+  window.init_tribunales = async function() {
+    await Promise.all([cargarExamenesSelect(), cargarJueces()]);
+  };
+
+  async function cargarExamenesSelect() {
+    const { data } = await supabase.from('exams').select('id, name').order('exam_date', { ascending: false });
+    const select = document.getElementById('filtro-exam-trib');
+    (data ?? []).forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = e.name;
+      select.appendChild(opt);
+    });
+  }
+
+  async function cargarJueces() {
+    const { data } = await supabase.from('profiles').select('id, full_name').eq('role', 'juez').eq('is_active', true).order('full_name');
+    juecesDisp = data ?? [];
+    const select = document.getElementById('select-nuevo-juez');
+    juecesDisp.forEach(j => {
+      const opt = document.createElement('option');
+      opt.value = j.id;
+      opt.textContent = j.full_name;
+      select.appendChild(opt);
+    });
+  }
+
+  window.cargarTribunalesDeExamen = async function() {
+    const examId = document.getElementById('filtro-exam-trib').value;
+    examSeleccionadoId = examId || null;
+    document.getElementById('btn-nuevo-trib').disabled = !examId;
+
+    const contenedor = document.getElementById('contenido-tribunales');
+    if (!examId) {
+      contenedor.innerHTML = '<div class="empty-state"><div class="empty-icon">⚖️</div><p>Selecciona un examen para ver sus tribunales.</p></div>';
+      return;
+    }
+
+    contenedor.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><span>Cargando tribunales...</span></div>';
+
+    const { data: tribunales } = await supabase
+      .from('tribunals')
+      .select('*, tribunal_judges(*, profiles(full_name))')
+      .eq('exam_id', examId);
+
+    if (!tribunales || tribunales.length === 0) {
+      contenedor.innerHTML = '<div class="empty-state"><div class="empty-icon">⚖️</div><p>No hay tribunales creados para este examen.</p></div>';
+      return;
+    }
+
+    contenedor.innerHTML = tribunales.map(t => {
+      const jueces = (t.tribunal_judges ?? []).map(tj => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f2f5;">
+          <span style="font-size:14px;">👤</span>
+          <span style="flex:1;font-size:13.5px;">${tj.profiles?.full_name ?? '—'}</span>
+          ${tj.is_president ? '<span class="badge badge-blue">Presidente</span>' : ''}
+          ${tj.diploma_valid_until ? `<span style="font-size:12px;color:#6b7280;">Diploma: ${tj.diploma_valid_until}</span>` : '<span class="badge badge-red" style="font-size:11px;">Sin diploma</span>'}
+        </div>`).join('');
+
+      return `
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <h3>⚖️ ${t.name}</h3>
+            <button class="btn btn-secondary btn-sm" onclick="editarTribunal('${t.id}')">Editar</button>
+          </div>
+          <div class="card-body">
+            ${jueces || '<p style="color:#6b7280;font-size:13px;">Sin jueces asignados.</p>'}
+            <p style="font-size:12px;color:#6b7280;margin-top:8px;">${(t.tribunal_judges ?? []).length} juez/jueces asignados</p>
+          </div>
+        </div>`;
+    }).join('');
+  };
+
+  window.abrirModalTribunal = function() {
+    editandoTribId = null;
+    juecesEnTribunal = [];
+    document.getElementById('modal-trib-titulo').textContent = 'Nuevo tribunal';
+    document.getElementById('trib-nombre').value = '';
+    document.getElementById('msg-tribunal').innerHTML = '';
+    renderizarJuecesEnTribunal();
+    document.getElementById('modal-tribunal').classList.remove('hidden');
+  };
+
+  window.editarTribunal = async function(id) {
+    editandoTribId = id;
+    const { data: trib } = await supabase.from('tribunals').select('name').eq('id', id).single();
+    const { data: judges } = await supabase.from('tribunal_judges').select('*, profiles(full_name)').eq('tribunal_id', id);
+    document.getElementById('trib-nombre').value = trib?.name ?? '';
+    juecesEnTribunal = (judges ?? []).map(j => ({
+      id: j.judge_profile_id,
+      name: j.profiles?.full_name ?? '—',
+      diploma: j.diploma_valid_until ?? '',
+      is_president: j.is_president
+    }));
+    document.getElementById('modal-trib-titulo').textContent = 'Editar tribunal';
+    document.getElementById('msg-tribunal').innerHTML = '';
+    renderizarJuecesEnTribunal();
+    document.getElementById('modal-tribunal').classList.remove('hidden');
+  };
+
+  window.agregarJuezTribunal = function() {
+    const juezId  = document.getElementById('select-nuevo-juez').value;
+    const diploma = document.getElementById('juez-diploma').value;
+    if (!juezId || juecesEnTribunal.find(j => j.id === juezId)) return;
+    const juez = juecesDisp.find(j => j.id === juezId);
+    juecesEnTribunal.push({ id: juezId, name: juez?.full_name ?? '—', diploma, is_president: false });
+    document.getElementById('select-nuevo-juez').value = '';
+    document.getElementById('juez-diploma').value = '';
+    renderizarJuecesEnTribunal();
+  };
+
+  function renderizarJuecesEnTribunal() {
+    const contenedor = document.getElementById('lista-jueces-trib');
+    if (juecesEnTribunal.length === 0) {
+      contenedor.innerHTML = '<p style="font-size:13px;color:#6b7280;">Sin jueces asignados aún.</p>';
+      return;
+    }
+    contenedor.innerHTML = juecesEnTribunal.map((j, idx) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f2f5;">
+        <span style="flex:1;font-size:13.5px;">👤 ${j.name}</span>
+        <label style="font-size:12px;display:flex;align-items:center;gap:4px;">
+          <input type="checkbox" onchange="togglePresidente(${idx})" ${j.is_president ? 'checked' : ''} /> Presidente
+        </label>
+        <button type="button" onclick="quitarJuez(${idx})" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;">×</button>
+      </div>`).join('');
+  }
+
+  window.togglePresidente = function(idx) {
+    juecesEnTribunal.forEach((j, i) => j.is_president = (i === idx));
+    renderizarJuecesEnTribunal();
+  };
+
+  window.quitarJuez = function(idx) {
+    juecesEnTribunal.splice(idx, 1);
+    renderizarJuecesEnTribunal();
+  };
+
+  window.cerrarModalTribunal = function() {
+    document.getElementById('modal-tribunal').classList.add('hidden');
+  };
+
+  window.guardarTribunal = async function() {
+    const nombre = document.getElementById('trib-nombre').value.trim();
+    if (!nombre) { mostrarError('msg-tribunal', 'El nombre del tribunal es obligatorio.'); return; }
+    if (!examSeleccionadoId) { mostrarError('msg-tribunal', 'No hay examen seleccionado.'); return; }
+
+    const btn = document.getElementById('btn-guardar-trib');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+      let tribId = editandoTribId;
+      if (editandoTribId) {
+        await supabase.from('tribunals').update({ name: nombre }).eq('id', editandoTribId);
+        await supabase.from('tribunal_judges').delete().eq('tribunal_id', editandoTribId);
+      } else {
+        const { data, error } = await supabase.from('tribunals').insert({ exam_id: examSeleccionadoId, name: nombre }).select('id').single();
+        if (error) throw error;
+        tribId = data.id;
+      }
+
+      if (juecesEnTribunal.length > 0) {
+        const judgesData = juecesEnTribunal.map(j => ({
+          tribunal_id:      tribId,
+          judge_profile_id: j.id,
+          diploma_valid_until: j.diploma || null,
+          is_president:     j.is_president
+        }));
+        await supabase.from('tribunal_judges').insert(judgesData);
+      }
+
+      mostrarExito('msg-tribunal', '✓ Tribunal guardado.');
+      await cargarTribunalesDeExamen();
+    } catch (err) {
+      mostrarError('msg-tribunal', `Error: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar';
+    }
+  };
+
+  if (document.getElementById('seccion-tribunales')) window.init_tribunales();
+</script>

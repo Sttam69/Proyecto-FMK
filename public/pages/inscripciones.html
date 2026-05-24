@@ -1,0 +1,141 @@
+<!-- SECCIÓN: INSCRIPCIONES Y PAGOS -->
+<div id="seccion-inscripciones">
+
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-insc" placeholder="Buscar aspirante o examen..." oninput="filtrarInscripciones()" />
+    </div>
+    <select id="filtro-pago" onchange="filtrarInscripciones()" style="padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13.5px;">
+      <option value="">Todos los pagos</option>
+      <option value="pendiente">Pago pendiente</option>
+      <option value="confirmado">Pago confirmado</option>
+      <option value="exento">Exento</option>
+    </select>
+    <button class="btn btn-primary" onclick="abrirModalInscripcion()">+ Nueva inscripción</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>📝 Inscripciones</h3>
+      <span id="insc-count" style="font-size:13px;color:#6b7280;"></span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Aspirante</th>
+          <th>Examen</th>
+          <th>Grado</th>
+          <th>Vía</th>
+          <th>Cuota</th>
+          <th>Pago</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-inscripciones">
+        <tr><td colspan="8" class="loading-spinner"><div class="spinner"></div><span>Cargando...</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL: NUEVA INSCRIPCIÓN -->
+  <div class="modal-overlay hidden" id="modal-inscripcion">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3>Nueva inscripción</h3>
+        <button class="modal-close" onclick="cerrarModalInscripcion()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-inscripcion"></div>
+
+        <div class="form-group">
+          <label>Aspirante *</label>
+          <select id="insc-aspirante" onchange="onAspiraanteChange()">
+            <option value="">— Seleccionar aspirante —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Examen *</label>
+          <select id="insc-examen" onchange="onExamenChange()">
+            <option value="">— Seleccionar examen —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grado al que aspira *</label>
+          <select id="insc-grado" onchange="calcularCuota()">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vía del Bloque Específico *</label>
+          <select id="insc-via">
+            <option value="">— Seleccionar —</option>
+            <option value="kumite">Vía Kumite</option>
+            <option value="campeonatos">Vía Campeonatos</option>
+            <option value="tecnica">Vía Técnica</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="insc-repetidor" onchange="calcularCuota()" />
+            <span>Aspirante repetidor (50% de descuento)</span>
+          </label>
+        </div>
+
+        <div id="panel-requisitos" style="display:none;margin-top:12px;"></div>
+
+        <div id="panel-cuota" style="display:none;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+            <span>Cuota base:</span>
+            <span id="cuota-base">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:#d97706;">
+            <span>Descuento:</span>
+            <span id="cuota-descuento">— %</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:1px solid #e5e7eb;padding-top:8px;">
+            <span>Total a pagar:</span>
+            <span id="cuota-total" style="color:#2563eb;">—</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalInscripcion()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-insc" onclick="guardarInscripcion()">Inscribir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAR PAGO -->
+  <div class="modal-overlay hidden" id="modal-pago">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <h3>Confirmar pago</h3>
+        <button class="modal-close" onclick="cerrarModalPago()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="msg-pago"></div>
+        <p id="pago-info" style="margin-bottom:12px;font-size:13.5px;"></p>
+        <div class="form-group">
+          <label>Fecha de pago</label>
+          <input type="date" id="pago-fecha" />
+        </div>
+        <div class="form-group">
+          <label>Estado del pago</label>
+          <select id="pago-status">
+            <option value="confirmado">Confirmado</option>
+            <option value="exento">Exento de pago</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModalPago()">Cancelar</button>
+        <button class="btn btn-primary" id="btn-confirmar-pago" onclick="confirmarPago()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
